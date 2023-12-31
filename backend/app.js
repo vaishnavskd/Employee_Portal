@@ -43,25 +43,34 @@ const EmployeeModel = mongoose.model('Employee', employeeSchema);
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
-    const tokenHeader = req.header['authorization'];
+    const tokenHeader = req.headers['authorization'];
 
     if (!tokenHeader) {
         return res.status(401).json({ error: 'Unauthorized: Missing token' });
     }
 
-    // Extract the token from the 'Bearer' tokenHeader
-    const [, token] = tokenHeader.split(' ');
-
-    if (!token) {
+    // Check if the token starts with 'Bearer'
+    if (!tokenHeader.startsWith('Bearer ')) {
         return res.status(401).json({ error: 'Unauthorized: Invalid token format' });
     }
 
+    // Extract the token from the 'Bearer' tokenHeader
+    const token = tokenHeader.slice(7);
+
     jwt.verify(token, secretKey, (err, user) => {
-        if (err) return res.sendStatus(403);
+        console.log('Received Token:', token);
+    
+        if (err) {
+            console.error('Token Verification Error:', err);
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+    
         req.user = user;
         next();
     });
+    
 };
+
 
 // Routes
 app.post('/login', async (req, res) => {
@@ -80,7 +89,7 @@ app.post('/login', async (req, res) => {
         let payload = { username: user.username, password: user.password }
         if (user) {
             let userToken = jwt.sign(payload, secretKey, { expiresIn: '1h' });
-            return res.status(200).json({ token: userToken, role: 'user' });
+            return res.status(200).json({ token: userToken, role: 'user',id:user._id });
         } else {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -160,6 +169,17 @@ app.delete('/employees/:id', authenticateToken, async (req, res) => {
 });
 
 app.post('/employees', authenticateToken, async (req, res) => {
+    const { name, position, location, salary, username, password } = req.body;
+    try {
+        const newEmployee = new EmployeeModel({ name, position, location, salary, username, password });
+        await newEmployee.save();
+        res.status(201).json(newEmployee);
+    } catch (error) {
+        console.error('Failed to add employee:', error.message);
+        res.status(500).send('Internal Server Error');
+    }
+});
+app.post('/add', async (req, res) => {
     const { name, position, location, salary, username, password } = req.body;
     try {
         const newEmployee = new EmployeeModel({ name, position, location, salary, username, password });

@@ -6,6 +6,7 @@ import SignUp from './components/SignUp';
 import Home from './components/Home';
 import Main from './elements/Main';
 import UserDash from './components/UserDash';
+import AdminDash from './components/AdminDash';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path='/login' element={<Home child={<Login/>}/>}/>
         <Route path='/signup' element={<Home child={<SignUp/>}/>}/>
         <Route path='/user' element={<UserDash/>}/>
+        <Route path='/admin' element={<AdminDash/>}/>
       </Routes>
     </div>
   );
